@@ -1,38 +1,153 @@
-local MadL = loadstring(game:HttpGet("https://raw.githubusercontent.com/cujeXscriptos/Oenfisjs/refs/heads/main/Eneifhsmejf"))()
+local MadL = loadstring(game:HttpGet(
+	"https://raw.githubusercontent.com/cujeXscriptos/Oenfisjs/refs/heads/main/Eneifhsmejf"
+))()
 
 local Window = MadL:CreateWindow({
-    Name = "ABILITY ARENA SCRIPT",
-    Subtitle = "https://discord.gg/w53MSRJ7B9"
+	Name = "ABILITY ARENA SCRIPT",
+	Subtitle = "https://discord.gg/w53MSRJ7B9"
 })
 
 local Main = Window:AddTab({
-    Name = "Main" 
-
+	Name = "Main"
 })
 
-Main:AddButton({
-    Name = "Anti Void Kill",
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
-    Callback = function()
+local LocalPlayer = Players.LocalPlayer
 
-     local Players = game:GetService("Players")
-local player = Players.LocalPlayer
+local AutoLookEnabled = false
+local LookDistance = 50
 
-local KillBricks = workspace:FindFirstChild("KillBricks")
-if KillBricks then
-    KillBricks:Destroy()
+local function GetCharacter()
+	return LocalPlayer.Character
 end
 
-local VOID_Y = -50
+local function GetRoot(Character)
+	if not Character then
+		return nil
+	end
 
-game:GetService("RunService").Heartbeat:Connect(function()
-    local character = player.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
+	return Character:FindFirstChild("HumanoidRootPart")
+end
 
-    if root and root.Position.Y < VOID_Y then
-        root.CFrame = CFrame.new(root.Position.X, 100, root.Position.Z)
-    end
+local function GetNearestPlayer()
+	local Character = GetCharacter()
+	local Root = GetRoot(Character)
+
+	if not Root then
+		return nil
+	end
+
+	local NearestPlayer = nil
+	local NearestDistance = LookDistance
+
+	for _, Player in ipairs(Players:GetPlayers()) do
+		if Player ~= LocalPlayer then
+			local TargetCharacter = Player.Character
+			local TargetRoot = GetRoot(TargetCharacter)
+			local Humanoid = TargetCharacter and TargetCharacter:FindFirstChildOfClass("Humanoid")
+
+			if TargetRoot and Humanoid and Humanoid.Health > 0 then
+				local CurrentDistance = (TargetRoot.Position - Root.Position).Magnitude
+
+				if CurrentDistance <= NearestDistance then
+					NearestDistance = CurrentDistance
+					NearestPlayer = Player
+				end
+			end
+		end
+	end
+
+	return NearestPlayer
+end
+
+Main:AddToggle({
+	Name = "Auto Look",
+	Default = false,
+
+	Callback = function(Value)
+		AutoLookEnabled = Value
+	end
+})
+
+Main:AddSlider({
+	Name = "Look Distance",
+	Min = 0,
+	Max = 100,
+	Default = 50,
+
+	Callback = function(Value)
+		LookDistance = Value
+	end
+})
+
+local function AutoLook()
+	if not AutoLookEnabled then
+		return
+	end
+
+	local Character = GetCharacter()
+	local Root = GetRoot(Character)
+
+	if not Root then
+		return
+	end
+
+	local TargetPlayer = GetNearestPlayer()
+
+	if not TargetPlayer then
+		return
+	end
+
+	local TargetCharacter = TargetPlayer.Character
+	local TargetRoot = GetRoot(TargetCharacter)
+
+	if not TargetRoot then
+		return
+	end
+
+	local TargetPosition = TargetRoot.Position
+
+	local LookPosition = Vector3.new(
+		TargetPosition.X,
+		Root.Position.Y,
+		TargetPosition.Z
+	)
+
+	Root.CFrame = CFrame.lookAt(
+		Root.Position,
+		LookPosition
+	)
+end
+
+RunService.RenderStepped:Connect(function()
+	AutoLook()
 end)
 
-    end
+Main:AddButton({
+	Name = "Anti Void Kill",
+
+	Callback = function()
+		local KillBricks = workspace:FindFirstChild("KillBricks")
+
+		if KillBricks then
+			KillBricks:Destroy()
+		end
+
+		local VOID_Y = -50
+
+		RunService.Heartbeat:Connect(function()
+			local Character = LocalPlayer.Character
+			local Root = GetRoot(Character)
+
+			if Root and Root.Position.Y < VOID_Y then
+				Root.CFrame = CFrame.new(
+					Root.Position.X,
+					100,
+					Root.Position.Z
+				)
+			end
+		end)
+	end
 })

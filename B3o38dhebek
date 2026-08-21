@@ -1,0 +1,38 @@
+local MadL = loadstring(game:HttpGet("https://raw.githubusercontent.com/cujeXscriptos/Oenfisjs/refs/heads/main/Eneifhsmejf"))()
+
+local Window = MadL:CreateWindow({
+    Name = "ABILITY ARENA SCRIPT",
+    Subtitle = "https://discord.gg/w53MSRJ7B9"
+})
+
+local Main = Window:AddTab({
+    Name = "Main" 
+
+})
+
+Main:AddButton({
+    Name = "Anti Void Kill",
+
+    Callback = function()
+
+     local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local KillBricks = workspace:FindFirstChild("KillBricks")
+if KillBricks then
+    KillBricks:Destroy()
+end
+
+local VOID_Y = -50
+
+game:GetService("RunService").Heartbeat:Connect(function()
+    local character = player.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+
+    if root and root.Position.Y < VOID_Y then
+        root.CFrame = CFrame.new(root.Position.X, 100, root.Position.Z)
+    end
+end)
+
+    end
+})

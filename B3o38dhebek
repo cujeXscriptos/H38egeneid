@@ -19,6 +19,99 @@ local LocalPlayer = Players.LocalPlayer
 local AutoLookEnabled = false
 local LookDistance = 50
 
+local CircleFolder = Instance.new("Folder")
+CircleFolder.Name = "MadL_ClientRadius"
+CircleFolder.Parent = workspace.CurrentCamera
+
+local CircleParts = {}
+local CircleBeams = {}
+
+local CircleSegments = 64
+local CircleColor = Color3.fromRGB(255, 80, 180)
+
+local function CreateRadiusCircle()
+	for _, Object in ipairs(CircleFolder:GetChildren()) do
+		Object:Destroy()
+	end
+
+	table.clear(CircleParts)
+	table.clear(CircleBeams)
+
+	for Index = 1, CircleSegments do
+		local Part = Instance.new("Part")
+
+		Part.Name = "RadiusPoint_" .. Index
+		Part.Anchored = true
+		Part.CanCollide = false
+		Part.CanTouch = false
+		Part.CanQuery = false
+		Part.Transparency = 1
+		Part.Size = Vector3.new(0.1, 0.1, 0.1)
+
+		Part.Parent = CircleFolder
+
+		table.insert(CircleParts, Part)
+	end
+
+	for Index = 1, CircleSegments do
+		local NextIndex = Index + 1
+
+		if NextIndex > CircleSegments then
+			NextIndex = 1
+		end
+
+		local Attachment0 = Instance.new("Attachment")
+		Attachment0.Parent = CircleParts[Index]
+
+		local Attachment1 = Instance.new("Attachment")
+		Attachment1.Parent = CircleParts[NextIndex]
+
+		local Beam = Instance.new("Beam")
+
+		Beam.Attachment0 = Attachment0
+		Beam.Attachment1 = Attachment1
+
+		Beam.Color = ColorSequence.new(CircleColor)
+
+		Beam.Width0 = 0.08
+		Beam.Width1 = 0.08
+
+		Beam.FaceCamera = true
+		Beam.LightEmission = 1
+		Beam.Transparency = NumberSequence.new(0.05)
+
+		Beam.Parent = CircleParts[Index]
+
+		table.insert(CircleBeams, Beam)
+	end
+end
+
+CreateRadiusCircle()
+
+local function UpdateRadiusCircle()
+	local Character = LocalPlayer.Character
+	local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+
+	if not Root then
+		for _, Part in ipairs(CircleParts) do
+			Part.Transparency = 1
+		end
+
+		return
+	end
+
+	local Center = Root.Position
+
+	for Index, Part in ipairs(CircleParts) do
+		local Angle = ((Index - 1) / CircleSegments) * math.pi * 2
+
+		local X = math.cos(Angle) * LookDistance
+		local Z = math.sin(Angle) * LookDistance
+
+		Part.Position = Center + Vector3.new(X, 0.15, Z)
+	end
+end
+
 local function GetCharacter()
 	return LocalPlayer.Character
 end
@@ -49,7 +142,8 @@ local function GetNearestPlayer()
 			local Humanoid = TargetCharacter and TargetCharacter:FindFirstChildOfClass("Humanoid")
 
 			if TargetRoot and Humanoid and Humanoid.Health > 0 then
-				local CurrentDistance = (TargetRoot.Position - Root.Position).Magnitude
+				local CurrentDistance =
+					(TargetRoot.Position - Root.Position).Magnitude
 
 				if CurrentDistance <= NearestDistance then
 					NearestDistance = CurrentDistance
@@ -64,6 +158,7 @@ end
 
 Main:AddToggle({
 	Name = "Auto Look",
+
 	Default = false,
 
 	Callback = function(Value)
@@ -73,6 +168,7 @@ Main:AddToggle({
 
 Main:AddSlider({
 	Name = "Look Distance",
+
 	Min = 0,
 	Max = 100,
 	Default = 50,
@@ -122,6 +218,7 @@ local function AutoLook()
 end
 
 RunService.RenderStepped:Connect(function()
+	UpdateRadiusCircle()
 	AutoLook()
 end)
 
